@@ -1,66 +1,157 @@
-import random
-import collections
+import secrets
+import time
 
 
-def Min_Conflicts(size, max_steps):
-    board = Generate_Board(size)
-    for i in range (max_steps):
-        if Check_Board(board):
-            return board
+def main():
+    # file input
+    with open("nqueens.txt", 'r') as fInput:
+        # read nqueens.txt into a list and convert all elements to int
+        fileList = [int(x) for x in fInput.readlines()]
+        # only accept inputs between 3 and 10000000
+        fileList = [x for x in fileList if 3 < x <= 10000000]
+
+    # run tests for each x value
+    resultList = [runTest(i) for i in fileList]
+
+    # file output
+    with open ("nqueens_out.txt", 'w') as fOutput:
+        # convert all elements to a string and add a \n
+        outputList = [str(x)+"\n" for x in resultList]
+        # remove the \n from the last element
+        outputList[-1] = outputList[-1][:-1]
+        # write to the file
+        fOutput.writelines(outputList)
+
+
+def runTest(x):
+    '''
+    Runs the nqueens solving algorithm with x many queens
+    :param x: board dimensions / number of queens
+    '''
+
+    # initial variables
+    # board dimensions / number of queens
+    # maximum number of queen movements allowed
+    max_steps = 10000000000000
+    # time variables
+    endTime = time.time()+20
+    # x by x board with x queens randomly placed
+    board = createBoard(x)
+    # stop repeat movements
+    conflictIndex = -1
+
+    # repeats as long as specified
+    for i in range(max_steps):
+        # gets the index of one of the queens with the maximum number of conflicts. Cannot find the same index twice
+        conflictIndex = getConflicts(board, x, conflictIndex)
+
+        # if there are no conflicts, the board is solved
+        if conflictIndex is None:
+            # track the number of steps and stop repeating the process
+            print("Steps: ", i)
+            # print the placements of the queens on the board at the final state
+            print("Solution:")
+            for j in board:
+                print(j, end=" ")
+            print()
+            break
+
+        # if the board is not solved, move the chosen queen to its space with the least conflicts
         else:
-            # create a list of queens in conflict as index values
-            conflicts_list = []
-            for j in range(len(board)):
-                conflict_check = Check_Conflict(board, j, board[j])
-                if conflict_check != 0:
-                    conflicts_list.append(j)
+            board = minimizeConflicts(board, conflictIndex, x)
 
+        if time.time() > endTime:
+            print("No solution found. Steps: ", i)
+            break
 
-
-
-
-
-def Check_Conflict(board, x, y):
-    conflicts = 0
-    for i in range(len(board)):
-        if y == board[i]:
-            conflicts -= -1
-        if board[i] - i == y - x:
-            conflicts = 1 + conflicts
-        if board[i] + i == y + x:
-            conflicts += 1
-    return conflicts
-
-
-
-def Check_Board(board):
-    '''
-    Function tells us if the board is correct or not
-    :param board: the board we want to check
-    :return: True if board is correct, False if not
-    '''
-    # check rows
-    check_list = list(collections.Counter(board).values())
-    for i in check_list:
-        if i != 1:
-            return False
-
-    # check diagonals
-    for i in range(len(board)):
-        for j in range(i, len(board)):
-            if board[i] - i == board[j] - j: # check left diagonals
-                return False
-            if board[i] + i == board[j] + j: # check right diagonals
-                return False
-    return True
-
-
-def Generate_Board(size):
-    board = []
-    for column in range(size):
-        board.append(random.randint(1, size))
     return board
 
 
-if __name__ == '__main__':
-    Check_Board(Generate_Board(8))
+# returns one (of the potential many) queen that has the highest number of conflicts
+def getConflicts(board, x, lastVal):
+    # variables for tracking the queens with the highest conflicts
+    maxConflicts = 0
+    conflictIndex = []
+    # for each queen
+    for i in range(x):
+        conflicts = 0
+        # find the total number of conflicts with other queens
+        for j in range(x):
+            conflicts += getConflictCount(board, i, j)
+
+        # if it has a new maximum conflict number, track the number of conflicts and the index of the queen
+        if conflicts > maxConflicts and i is not lastVal:
+            maxConflicts = conflicts
+            conflictIndex = [i]
+        # if it is equal to the current highest conflict number, track this queen as well as previous
+        elif conflicts == maxConflicts and conflicts != 0 and i is not lastVal:
+            conflictIndex.append(i)
+    # return None if there are no conflicts
+    if len(conflictIndex) == 0:
+        return None
+    # otherwise, return a random queen that has the highest conflict number
+    else:
+        return secrets.choice(conflictIndex)
+
+
+# moves a queen at a given index to a spot where it has the fewest conflicts
+def minimizeConflicts(board, conflictIndex, x):
+    # variables that track the best new position for the queen
+    newPosition = []
+    minConflicts = x
+    # a variable to make sure a queen cannot move to its initial position
+    # this stops repeat states where the program can do nothing
+    changeGuarantee = board[conflictIndex]
+
+    # for each potential queen position
+    for i in range(x):
+        # set the board so that the queen is moved to this position
+        board[conflictIndex] = i
+        conflicts = 0
+
+        # check the number of conflicts for the queen if it is in this position
+        for j in range(x):
+            conflicts += getConflictCount(board, i, j)
+
+        # if the position is the best position, track the index
+        if conflicts < minConflicts and i is not changeGuarantee:
+            minConflicts = conflicts
+            newPosition = [i]
+        # if the position has the same amount of conflicts as other best cases, track all the indexes
+        elif conflicts == minConflicts and i is not changeGuarantee:
+            newPosition.append(i)
+
+    # put the queen in a random position that has the fewest conflicts and return the board
+    board[conflictIndex] = secrets.choice(newPosition)
+    return board
+
+
+# checks if there are conflicts between 2 queens
+def getConflictCount(board, i, j):
+    # checks if the queens are in the same row
+    if board[i] == board[j] and i is not j:
+        return 1
+
+    # checks if the queens are in the same diagonal to the left
+    if j < i:
+        diag = abs(j - i)
+        if board[i - diag] == board[i] - diag or board[i - diag] == board[i] + diag:
+            return 1
+
+    # checks if the queens are in the same diagonal to the right
+    if j > i:
+        diag = abs(j - i)
+        if board[i + diag] == board[i] - diag or board[i + diag] == board[i] + diag:
+            return 1
+    # returns 0 if the queens are not in conflict
+    return 0
+
+
+# creates a randomized board with 1 queen in every column
+def createBoard(x):
+    array = [secrets.randbelow(x) for i in range(x)]
+    return array
+
+
+if __name__ == "__main__":
+    main()
