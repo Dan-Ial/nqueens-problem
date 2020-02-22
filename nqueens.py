@@ -1,5 +1,5 @@
-import secrets
 import time
+import random
 
 
 def main():
@@ -91,7 +91,7 @@ def getConflicts(board, x, lastVal):
         return None
     # otherwise, return a random queen that has the highest conflict number
     else:
-        return secrets.choice(conflictIndex)
+        return random.choice(conflictIndex)
 
 
 # moves a queen at a given index to a spot where it has the fewest conflicts
@@ -122,7 +122,7 @@ def minimizeConflicts(board, conflictIndex, x):
             newPosition.append(i)
 
     # put the queen in a random position that has the fewest conflicts and return the board
-    board[conflictIndex] = secrets.choice(newPosition)
+    board[conflictIndex] = random.choice(newPosition)
     return board
 
 
@@ -149,7 +149,7 @@ def getConflictCount(board, i, j):
 
 # creates a randomized board with 1 queen in every column
 def createBoard(x):
-    array = [secrets.randbelow(x) for i in range(x)]
+    array = [random.randrange(x) for i in range(x)]
     return array
 
 
