@@ -110,7 +110,7 @@ def minimizeConflicts(board, conflictIndex, x):
         conflicts = 0
 
         # check the number of conflicts for the queen if it is in this position
-        for j in range(x):
+        for j in range(i, x):
             conflicts += getConflictCount(board, i, j)
 
         # if the position is the best position, track the index
