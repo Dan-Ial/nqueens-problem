@@ -53,7 +53,7 @@ def check_conflicts(conflicts):
 
 
 def min_conflicts(board, conflicts):
-    max_steps = 100000
+    max_steps = 300
     for step in range(max_steps):
         if not check_conflicts(conflicts):
             print("Solution\nSteps:", step)
@@ -76,7 +76,8 @@ def min_conflicts(board, conflicts):
 def main():
     solved = False
     while not solved:
-        repair = create_board(512)
+        print("restarted")
+        repair = create_board(258)
         if min_conflicts(repair[0], repair[1]):
             solved = True
 
