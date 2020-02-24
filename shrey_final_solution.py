@@ -14,14 +14,12 @@ def create_board(size):
         board.append(append_vals)
     return board, peep_conflicts(board)
 
-
 def get_position(board, col_val, size):
     position_conflicts = {}
     for row_val in range(size):
         position_conflicts[row_val] = get_conflicts(board, col_val,  row_val)
     ret_vals = min_values(position_conflicts)
     return random.choice(ret_vals)
-
 
 def get_conflicts(board, col_val, row_val):
     total_conflicts = 0
@@ -70,14 +68,16 @@ def min_conflicts(board, conflicts):
             board[val[0]] = ret
             conflicts = peep_conflicts(board)
             # recreate everything if it reachex max
+    print(board)
     return False
 
 
 def main():
+    random.seed(None)
     solved = False
     while not solved:
         print("restarted")
-        repair = create_board(258)
+        repair = create_board(300)
         if min_conflicts(repair[0], repair[1]):
             solved = True
 
