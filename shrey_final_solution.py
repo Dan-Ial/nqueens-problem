@@ -10,24 +10,37 @@ def create_board(size):
     """
     board = [0]
     for queen in range(1, size):
-        append_vals = get_position(board, queen, size)
+        append_vals = generate_position(board, queen, size)
         board.append(append_vals)
+        if queen%100 == 0:
+            print(queen)
     return board, peep_conflicts(board)
 
-def get_position(board, col_val, size):
+def generate_position(board, col_val, size):
     position_conflicts = {}
     for row_val in range(size):
         position_conflicts[row_val] = get_conflicts(board, col_val,  row_val)
     ret_vals = min_values(position_conflicts)
     return random.choice(ret_vals)
 
+def get_position(board, col_val, size):
+    position_conflicts = {}
+    for row_val in range(size):
+        position_conflicts[row_val] = get_conflicts(board, col_val,  row_val)
+    ret_vals = min_values(position_conflicts)
+    if position_conflicts[ret_vals[0]] > position_conflicts[board[col_val]]:
+        return board[col_val]
+    else:
+        return random.choice(ret_vals)
+
 def get_conflicts(board, col_val, row_val):
     total_conflicts = 0
     for mem in range(len(board)):
-        if board[mem] == row_val and mem is not col_val:
-            total_conflicts += 1
-        elif abs(mem-col_val) == abs(board[mem] - row_val) and mem is not col_val:
-            total_conflicts += 1
+        if mem != col_val:
+            if board[mem] == row_val:
+                total_conflicts += 1
+            elif abs(mem-col_val) == abs(board[mem] - row_val):
+                total_conflicts += 1
     return total_conflicts
 
 
@@ -53,6 +66,7 @@ def check_conflicts(conflicts):
 def min_conflicts(board, conflicts):
     max_steps = 300
     for step in range(max_steps):
+        print(step)
         if not check_conflicts(conflicts):
             print("Solution\nSteps:", step)
             print(board)
@@ -60,6 +74,7 @@ def min_conflicts(board, conflicts):
         else:
             conflict_index = {}
             for vals in range(len(conflicts)):
+
                 if conflicts[vals] > 0:
                     # conflict_index[column_val] = row_val
                     conflict_index[vals] = board[vals]
@@ -68,7 +83,7 @@ def min_conflicts(board, conflicts):
             board[val[0]] = ret
             conflicts = peep_conflicts(board)
             # recreate everything if it reachex max
-    print(board)
+    #print(board)
     return False
 
 
@@ -77,7 +92,8 @@ def main():
     solved = False
     while not solved:
         print("restarted")
-        repair = create_board(300)
+        repair = create_board(257)
+        #print(repair[0])
         if min_conflicts(repair[0], repair[1]):
             solved = True
 

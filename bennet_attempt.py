@@ -1,23 +1,146 @@
 import random
+import timeit
 
-def get_conflicts(board, col_val, row_val):
+
+def create_board(size):
+    """
+    function that creates a board of the input size, tries to create the board to reduce number of conflicts
+    :param size: size of the board
+    :return: a 1D board where the index # represents the column value, and the actual number represents the row val
+    """
+    board = [0]
+    rows = {0: 1}
+    for i in range(1, size):
+        rows[i] = 0
+    ldiags = {0: 1}
+    for i in range(-(size - 1), size):
+        if i != 0:
+            ldiags[i] = 0
+    rdiags = {0: 1}
+    for i in range(1, 2 * size - 1):
+        rdiags[i] = 0
+
+    for queen in range(1, size):
+        append_vals = generate_position(queen, size, rows, ldiags, rdiags)
+        board.append(append_vals[0])
+        rows = append_vals[1]
+        ldiags = append_vals[2]
+        rdiags = append_vals[3]
+    return board, peep_conflicts(board, rows, ldiags, rdiags), rows, ldiags, rdiags
+
+
+def generate_position(col_val, size, rows, ldiags, rdiags):
+    position_conflicts = {}
+    for row_val in range(size):
+        position_conflicts[row_val] = get_conflicts(col_val,  row_val, rows, ldiags, rdiags)
+    ret_vals = min_values(position_conflicts)
+    result = random.choice(ret_vals)
+
+    rows[result] += 1
+    ldiags[result - col_val] += 1
+    rdiags[result + col_val] += 1
+
+    return result, rows, ldiags, rdiags
+
+
+def get_position(board, col_val, size, rows, ldiags, rdiags):
+    position_conflicts = {}
+    for row_val in range(size):
+        position_conflicts[row_val] = get_conflicts(col_val,  row_val, rows, ldiags, rdiags)
+    ret_vals = min_values(position_conflicts)
+    if position_conflicts[ret_vals[0]] > position_conflicts[board[col_val]]:
+        return board[col_val], rows, ldiags, rdiags
+    else:
+        result = random.choice(ret_vals)
+        rows[board[col_val]] -= 1
+        ldiags[board[col_val] - col_val] -= 1
+        rdiags[board[col_val] + col_val] -= 1
+
+        rows[result] += 1
+        ldiags[result - col_val] += 1
+        rdiags[col_val + result] += 1
+        return result, rows, ldiags, rdiags
+
+
+def get_conflicts(col_val, row_val, rows, ldiags, rdiags):
     total_conflicts = 0
-    for mem in range(len(board)):
-        if mem is not col_val:
-            if board[mem] == row_val and mem is not col_val:
-                total_conflicts += 1
-                print(col_val, ", ", row_val, " conflicts with ", mem, ", ", board[mem])
-            elif abs(mem-col_val) == abs(board[mem] - row_val) and mem is not col_val:
-                total_conflicts += 1
-                print(col_val, ", ", row_val, " conflicts with ", mem, ", ", board[mem])
+    if rows[row_val] > 1:
+        total_conflicts += rows[row_val]
+    if ldiags[row_val-col_val] > 1:
+        total_conflicts += ldiags[row_val-col_val]
+    if rdiags[row_val+col_val] > 1:
+        total_conflicts += rdiags[row_val+col_val]
 
     return total_conflicts
 
+
+def peep_conflicts(board, rows, ldiags, rdiags):
+    total = []
+    for i in range(len(board)):
+        total.append(get_conflicts(i, board[i], rows, ldiags, rdiags))
+    return total
+
+
+def min_values(dicti):
+    min_v = min(dicti.values())
+    return [pos for pos in dicti if dicti[pos] == min_v]
+
+
+def check_conflicts(conflicts):
+    for val in conflicts:
+        if val > 0:
+            return True
+    return False
+
+
+def min_conflicts(board, conflicts, rows, ldiags, rdiags):
+    max_steps = 300
+    for step in range(max_steps):
+        #print(step)
+        if not check_conflicts(conflicts):
+            print("Solution\nSteps:", step)
+            print(board)
+            return True
+        else:
+            conflict_index = {}
+            for vals in range(len(conflicts)):
+
+                if conflicts[vals] > 0:
+                    # conflict_index[column_val] = row_val
+                    conflict_index[vals] = board[vals]
+            val = random.choice(list(conflict_index.items()))
+            ret = get_position(board, val[0], len(board), rows, ldiags, rdiags)
+            board[val[0]] = ret[0]
+            rows = ret[1]
+            ldiags = ret[2]
+            rdiags = ret[3]
+            print(board)
+            conflicts = peep_conflicts(board, rows, ldiags, rdiags)
+            # recreate everything if it reachex max
+    #print(board)
+    return False
+
+
 def main():
-    board = [0, 274, 236, 53, 36, 116, 21, 86, 82, 3, 165, 247, 133, 2, 45, 196, 55, 285, 169, 298, 272, 170, 262, 72, 240, 231, 17, 89, 56, 190, 204, 163, 276, 90, 254, 180, 200, 110, 280, 125, 222, 271, 47, 64, 233, 242, 269, 22, 166, 120, 16, 11, 30, 105, 189, 226, 42, 91, 164, 81, 182, 80, 106, 96, 159, 107, 37, 288, 183, 85, 97, 129, 219, 93, 139, 115, 52, 213, 257, 235, 173, 104, 151, 35, 148, 296, 124, 26, 286, 220, 137, 181, 43, 256, 232, 229, 199, 12, 241, 251, 287, 281, 177, 289, 94, 218, 161, 29, 38, 117, 145, 234, 252, 58, 121, 40, 54, 15, 1, 261, 295, 76, 221, 65, 284, 253, 70, 195, 294, 192, 71, 25, 208, 95, 140, 69, 290, 83, 74, 224, 277, 113, 7, 209, 8, 228, 216, 146, 237, 275, 147, 32, 57, 46, 156, 263, 283, 23, 230, 279, 109, 84, 286, 103, 178, 9, 246, 227, 152, 273, 6, 258, 297, 264, 51, 144, 31, 18, 292, 14, 4, 217, 119, 100, 172, 142, 270, 299, 153, 59, 143, 186, 79, 260, 203, 99, 28, 132, 87, 210, 282, 182, 123, 162, 197, 153, 160, 168, 98, 194, 291, 50, 255, 223, 33, 63, 293, 150, 118, 249, 238, 149, 268, 166, 211, 5, 135, 225, 202, 176, 68, 34, 112, 19, 48, 155, 24, 62, 66, 206, 111, 267, 174, 27, 102, 157, 108, 259, 198, 10, 136, 214, 127, 278, 167, 13, 49, 77, 114, 44, 184, 171, 266, 37, 159, 126, 154, 193, 248, 265, 130, 60, 245, 158, 175, 239, 179, 39, 279, 131, 191, 78, 201, 212, 141, 187, 67, 243, 88, 122, 172, 207, 250, 185, 101, 101, 138, 215, 205, 128]
+    random.seed(None)
+    solved = False
+    while not solved:
+        print("restarted")
+        repair = create_board(8)
+        #print(repair[0])
+        if min_conflicts(repair[0], repair[1], repair[2], repair[3], repair[4]):
+            solved = True
 
-    for i in range(300):
-        print(get_conflicts(board, i, board[i]))
 
-if __name__ == '__main__':
-    main()
+print(timeit.timeit(main, number=1))
+
+#if __name__ == '__main__':
+#   main()
+
+##todo - ds for diags -> data structure which held the
+# array of diagonas - each diagonal was an array and that had a column of every queen on that diagonal
+## add one to all the boards for 1 indexing
+# 30 arrays for 8x8 that are stored in 2 arrays of right and left
+
+#explore having a dictionary where every queen has all rows/columns/diags stored as v
+# and you can just compare vals that way - makes it O(n) instead of O(n^2)

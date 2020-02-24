@@ -11,28 +11,29 @@ def create_board(size):
     """
     board = [0]
     rows = {0: 1}
-    diags = {0: 1}
+    ldiags = {0: 1}
+    rdiags = {0:1}
     for col in range(1, size):
-        append_vals = get_position(board, col, size, rows, diags)
+        append_vals = get_position(board, col, size, rows, ldiags, rdiags)
         board.append(append_vals)
         rows[append_vals] = 1
-        diags[col - append_vals] = 1
-    return board, peep_conflicts(board, rows, diags), rows, diags
+        ldiags[col - append_vals] = 1
+    return board, peep_conflicts(board, rows, ldiags), rows, ldiags, rdiags
 
 
-def get_position(board, col_val, size, rows, diags):
+def get_position(board, col_val, size, rows, ldiags):
     position_conflicts = {}
     for row_val in range(size):
-        position_conflicts[row_val] = get_conflicts(board, col_val,  row_val, rows, diags)
+        position_conflicts[row_val] = get_conflicts(board, col_val, row_val, rows, ldiags)
     ret_vals = min_values(position_conflicts)
     return random.choice(ret_vals)
 
 
-def get_conflicts(board, col_val, row_val, rows, diags):
+def get_conflicts(board, col_val, row_val, rows, ldiags, rdiags):
     total = 0
     if row_val in rows and rows[row_val] > 0:
         total += 1
-    if col_val - row_val in diags and diags[col_val - row_val] > 0:
+    if col_val - row_val in ldiags and ldiags[col_val - row_val] > 0:
         total += 1
     return total
     # total_conflicts = 0
