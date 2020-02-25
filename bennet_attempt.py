@@ -8,31 +8,33 @@ def create_board(size):
     :param size: size of the board
     :return: a 1D board where the index # represents the column value, and the actual number represents the row val
     """
-    board = [0]
+    board = [None] * size
+    board[0] = 0
     rows = {0: 1}
     for i in range(1, size):
         rows[i] = 0
     ldiags = {0: 1}
     for i in range(-(size - 1), size):
-        if i != 0:
-            ldiags[i] = 0
+         if i != 0:
+             ldiags[i] = 0
     rdiags = {0: 1}
     for i in range(1, 2 * size - 1):
         rdiags[i] = 0
 
     for queen in range(1, size):
-        append_vals = generate_position(queen, size, rows, ldiags, rdiags)
-        board.append(append_vals[0])
+        append_vals = generate_position(board, queen, size, rows, ldiags, rdiags)
+        board[queen] = append_vals[0]
         rows = append_vals[1]
         ldiags = append_vals[2]
         rdiags = append_vals[3]
+
     return board, peep_conflicts(board, rows, ldiags, rdiags), rows, ldiags, rdiags
 
 
-def generate_position(col_val, size, rows, ldiags, rdiags):
+def generate_position(board, col_val, size, rows, ldiags, rdiags):
     position_conflicts = {}
     for row_val in range(size):
-        position_conflicts[row_val] = get_conflicts(col_val,  row_val, rows, ldiags, rdiags)
+        position_conflicts[row_val] = get_conflicts(board, col_val,  row_val, rows, ldiags, rdiags)
     ret_vals = min_values(position_conflicts)
     result = random.choice(ret_vals)
 
@@ -46,8 +48,9 @@ def generate_position(col_val, size, rows, ldiags, rdiags):
 def get_position(board, col_val, size, rows, ldiags, rdiags):
     position_conflicts = {}
     for row_val in range(size):
-        position_conflicts[row_val] = get_conflicts(col_val,  row_val, rows, ldiags, rdiags)
+        position_conflicts[row_val] = get_conflicts(board, col_val,  row_val, rows, ldiags, rdiags)
     ret_vals = min_values(position_conflicts)
+
     if position_conflicts[ret_vals[0]] > position_conflicts[board[col_val]]:
         return board[col_val], rows, ldiags, rdiags
     else:
@@ -62,14 +65,23 @@ def get_position(board, col_val, size, rows, ldiags, rdiags):
         return result, rows, ldiags, rdiags
 
 
-def get_conflicts(col_val, row_val, rows, ldiags, rdiags):
+def get_conflicts(board, col_val, row_val, rows, ldiags, rdiags):
     total_conflicts = 0
-    if rows[row_val] > 1:
-        total_conflicts += rows[row_val]
-    if ldiags[row_val-col_val] > 1:
-        total_conflicts += ldiags[row_val-col_val]
-    if rdiags[row_val+col_val] > 1:
-        total_conflicts += rdiags[row_val+col_val]
+    if rows[row_val] >= 1:
+        if row_val == board[col_val]:
+            total_conflicts += rows[row_val] - 1
+        else:
+            total_conflicts += rows[row_val]
+    if ldiags[row_val-col_val] >= 1:
+        if row_val == board[col_val]:
+            total_conflicts += ldiags[row_val-col_val] - 1
+        else:
+            total_conflicts += ldiags[row_val-col_val]
+    if rdiags[row_val+col_val] >= 1:
+        if row_val == board[col_val]:
+            total_conflicts += rdiags[row_val+col_val] - 1
+        else:
+            total_conflicts += rdiags[row_val+col_val]
 
     return total_conflicts
 
@@ -77,7 +89,7 @@ def get_conflicts(col_val, row_val, rows, ldiags, rdiags):
 def peep_conflicts(board, rows, ldiags, rdiags):
     total = []
     for i in range(len(board)):
-        total.append(get_conflicts(i, board[i], rows, ldiags, rdiags))
+        total.append(get_conflicts(board, i, board[i], rows, ldiags, rdiags))
     return total
 
 
@@ -94,7 +106,8 @@ def check_conflicts(conflicts):
 
 
 def min_conflicts(board, conflicts, rows, ldiags, rdiags):
-    max_steps = 300
+    max_steps = 500
+    lastval = -1
     for step in range(max_steps):
         #print(step)
         if not check_conflicts(conflicts):
@@ -108,15 +121,22 @@ def min_conflicts(board, conflicts, rows, ldiags, rdiags):
                 if conflicts[vals] > 0:
                     # conflict_index[column_val] = row_val
                     conflict_index[vals] = board[vals]
-            val = random.choice(list(conflict_index.items()))
+
+            freshval = False
+            while not freshval:
+                val = random.choice(list(conflict_index.items()))
+                if val[0] != lastval:
+                    freshval = True
+                    lastval = val[0]
+                    #print(val[0])
             ret = get_position(board, val[0], len(board), rows, ldiags, rdiags)
             board[val[0]] = ret[0]
             rows = ret[1]
             ldiags = ret[2]
             rdiags = ret[3]
-            print(board)
+            #print(board)
             conflicts = peep_conflicts(board, rows, ldiags, rdiags)
-            # recreate everything if it reachex max
+            # recreate everything if it reaches max
     #print(board)
     return False
 
@@ -126,7 +146,7 @@ def main():
     solved = False
     while not solved:
         print("restarted")
-        repair = create_board(8)
+        repair = create_board(150000)
         #print(repair[0])
         if min_conflicts(repair[0], repair[1], repair[2], repair[3], repair[4]):
             solved = True
