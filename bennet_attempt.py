@@ -113,7 +113,7 @@ def min_conflicts(board, conflicts, rows, ldiags, rdiags):
         if not check_conflicts(conflicts):
             print("Solution\nSteps:", step)
             print(board)
-            return True
+            return board
         else:
             conflict_index = {}
             for vals in range(len(conflicts)):
@@ -141,21 +141,39 @@ def min_conflicts(board, conflicts, rows, ldiags, rdiags):
     return False
 
 
-def main():
+def run_test(sample_size):
     random.seed(None)
     solved = False
     while not solved:
-        print("restarted")
-        repair = create_board(150000)
+        repair = create_board(sample_size)
         #print(repair[0])
         if min_conflicts(repair[0], repair[1], repair[2], repair[3], repair[4]):
             solved = True
+    return repair[0]
 
 
-print(timeit.timeit(main, number=1))
+def main():
+    # file input
+    with open("nqueens.txt", 'r') as f_input:
+        # read nqueens.txt into a list and convert all elements to int
+        file_list = [int(x) for x in f_input.readlines()]
+        # only accept inputs between 3 and 10000000
+        file_list = [x for x in file_list if 3 < x <= 10000000]
 
-#if __name__ == '__main__':
-#   main()
+    # run tests for each x value
+    result_list = [run_test(i) for i in file_list]
+
+    # file output
+    with open("nqueens_out.txt", 'w') as f_output:
+        # convert all elements to a string and add a \n
+        output_list = [str(x) + "\n" for x in result_list]
+        # remove the \n from the last element
+        output_list[-1] = output_list[-1][:-1]
+        # write to the file
+        f_output.writelines(output_list)
+
+if __name__ == '__main__':
+    main()
 
 ##todo - ds for diags -> data structure which held the
 # array of diagonas - each diagonal was an array and that had a column of every queen on that diagonal

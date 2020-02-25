@@ -1,157 +1,181 @@
-import time
 import random
+
+
+def create_board(size):
+    """
+    function that creates a board of the input size, tries to create the board to reduce number of conflicts
+    :param size: size of the board
+    :return: a 1D board where the index # represents the column value, and the actual number represents the row val
+    """
+    board = [None] * size
+    board[0] = 0
+    rows = {0: 1}
+    for i in range(1, size):
+        rows[i] = 0
+    ldiags = {0: 1}
+    for i in range(-(size - 1), size):
+         if i != 0:
+             ldiags[i] = 0
+    rdiags = {0: 1}
+    for i in range(1, 2 * size - 1):
+        rdiags[i] = 0
+
+    for queen in range(1, size):
+        append_vals = generate_position(board, queen, size, rows, ldiags, rdiags)
+        board[queen] = append_vals[0]
+        rows = append_vals[1]
+        ldiags = append_vals[2]
+        rdiags = append_vals[3]
+
+    return board, peep_conflicts(board, rows, ldiags, rdiags), rows, ldiags, rdiags
+
+
+def generate_position(board, col_val, size, rows, ldiags, rdiags):
+    position_conflicts = {}
+    for row_val in range(size):
+        position_conflicts[row_val] = get_conflicts(board, col_val,  row_val, rows, ldiags, rdiags)
+    ret_vals = min_values(position_conflicts)
+    result = random.choice(ret_vals)
+
+    rows[result] += 1
+    ldiags[result - col_val] += 1
+    rdiags[result + col_val] += 1
+
+    return result, rows, ldiags, rdiags
+
+
+def get_position(board, col_val, size, rows, ldiags, rdiags):
+    position_conflicts = {}
+    for row_val in range(size):
+        position_conflicts[row_val] = get_conflicts(board, col_val,  row_val, rows, ldiags, rdiags)
+    ret_vals = min_values(position_conflicts)
+
+    if position_conflicts[ret_vals[0]] > position_conflicts[board[col_val]]:
+        return board[col_val], rows, ldiags, rdiags
+    else:
+        result = random.choice(ret_vals)
+        rows[board[col_val]] -= 1
+        ldiags[board[col_val] - col_val] -= 1
+        rdiags[board[col_val] + col_val] -= 1
+
+        rows[result] += 1
+        ldiags[result - col_val] += 1
+        rdiags[col_val + result] += 1
+        return result, rows, ldiags, rdiags
+
+
+def get_conflicts(board, col_val, row_val, rows, ldiags, rdiags):
+    total_conflicts = 0
+    if rows[row_val] >= 1:
+        if row_val == board[col_val]:
+            total_conflicts += rows[row_val] - 1
+        else:
+            total_conflicts += rows[row_val]
+    if ldiags[row_val-col_val] >= 1:
+        if row_val == board[col_val]:
+            total_conflicts += ldiags[row_val-col_val] - 1
+        else:
+            total_conflicts += ldiags[row_val-col_val]
+    if rdiags[row_val+col_val] >= 1:
+        if row_val == board[col_val]:
+            total_conflicts += rdiags[row_val+col_val] - 1
+        else:
+            total_conflicts += rdiags[row_val+col_val]
+
+    return total_conflicts
+
+
+def peep_conflicts(board, rows, ldiags, rdiags):
+    total = []
+    for i in range(len(board)):
+        total.append(get_conflicts(board, i, board[i], rows, ldiags, rdiags))
+    return total
+
+
+def min_values(dicti):
+    min_v = min(dicti.values())
+    return [pos for pos in dicti if dicti[pos] == min_v]
+
+
+def check_conflicts(conflicts):
+    for val in conflicts:
+        if val > 0:
+            return True
+    return False
+
+
+def min_conflicts(board, conflicts, rows, ldiags, rdiags):
+    max_steps = 500
+    lastval = -1
+    for step in range(max_steps):
+        #print(step)
+        if not check_conflicts(conflicts):
+            return True
+        else:
+            conflict_index = {}
+            for vals in range(len(conflicts)):
+
+                if conflicts[vals] > 0:
+                    # conflict_index[column_val] = row_val
+                    conflict_index[vals] = board[vals]
+
+            freshval = False
+            while not freshval:
+                val = random.choice(list(conflict_index.items()))
+                if val[0] != lastval:
+                    freshval = True
+                    lastval = val[0]
+                    #print(val[0])
+            ret = get_position(board, val[0], len(board), rows, ldiags, rdiags)
+            board[val[0]] = ret[0]
+            rows = ret[1]
+            ldiags = ret[2]
+            rdiags = ret[3]
+            #print(board)
+            conflicts = peep_conflicts(board, rows, ldiags, rdiags)
+            # recreate everything if it reaches max
+    #print(board)
+    return False
+
+
+def run_test(sample_size):
+    random.seed(None)
+    solved = False
+    while not solved:
+        repair = create_board(sample_size)
+        #print(repair[0])
+        if min_conflicts(repair[0], repair[1], repair[2], repair[3], repair[4]):
+            solved = True
+    return repair[0]
 
 
 def main():
     # file input
-    with open("nqueens.txt", 'r') as fInput:
+    with open("nqueens.txt", 'r') as f_input:
         # read nqueens.txt into a list and convert all elements to int
-        fileList = [int(x) for x in fInput.readlines()]
+        file_list = [int(x) for x in f_input.readlines()]
         # only accept inputs between 3 and 10000000
-        fileList = [x for x in fileList if 3 < x <= 10000000]
+        file_list = [x for x in file_list if 3 < x <= 10000000]
 
     # run tests for each x value
-    resultList = [runTest(i) for i in fileList]
+    result_list = [run_test(i) for i in file_list]
 
     # file output
-    with open ("nqueens_out.txt", 'w') as fOutput:
+    with open("nqueens_out.txt", 'w') as f_output:
         # convert all elements to a string and add a \n
-        outputList = [str(x)+"\n" for x in resultList]
+        output_list = [str(x) + "\n" for x in result_list]
         # remove the \n from the last element
-        outputList[-1] = outputList[-1][:-1]
+        output_list[-1] = output_list[-1][:-1]
         # write to the file
-        fOutput.writelines(outputList)
+        f_output.writelines(output_list)
 
-
-def runTest(x):
-    '''
-    Runs the nqueens solving algorithm with x many queens
-    :param x: board dimensions / number of queens
-    '''
-
-    # initial variables
-    # board dimensions / number of queens
-    # maximum number of queen movements allowed
-    max_steps = 10000000000000
-    # time variables
-    endTime = time.time()+20
-    # x by x board with x queens randomly placed
-    board = createBoard(x)
-    # stop repeat movements
-    conflictIndex = -1
-
-    # repeats as long as specified
-    for i in range(max_steps):
-        # gets the index of one of the queens with the maximum number of conflicts. Cannot find the same index twice
-        conflictIndex = getConflicts(board, x, conflictIndex)
-
-        # if there are no conflicts, the board is solved
-        if conflictIndex is None:
-            # track the number of steps and stop repeating the process
-            print("Steps: ", i)
-            # print the placements of the queens on the board at the final state
-            print("Solution:")
-            for j in board:
-                print(j, end=" ")
-            print()
-            break
-
-        # if the board is not solved, move the chosen queen to its space with the least conflicts
-        else:
-            board = minimizeConflicts(board, conflictIndex, x)
-
-        if time.time() > endTime:
-            print("No solution found. Steps: ", i)
-            break
-
-    return board
-
-
-# returns one (of the potential many) queen that has the highest number of conflicts
-def getConflicts(board, x, lastVal):
-    # variables for tracking the queens with the highest conflicts
-    maxConflicts = 0
-    conflictIndex = []
-    # for each queen
-    for i in range(x):
-        conflicts = 0
-        # find the total number of conflicts with other queens
-        for j in range(x):
-            conflicts += getConflictCount(board, i, j)
-
-        # if it has a new maximum conflict number, track the number of conflicts and the index of the queen
-        if conflicts > maxConflicts and i is not lastVal:
-            maxConflicts = conflicts
-            conflictIndex = [i]
-        # if it is equal to the current highest conflict number, track this queen as well as previous
-        elif conflicts == maxConflicts and conflicts != 0 and i is not lastVal:
-            conflictIndex.append(i)
-    # return None if there are no conflicts
-    if len(conflictIndex) == 0:
-        return None
-    # otherwise, return a random queen that has the highest conflict number
-    else:
-        return random.choice(conflictIndex)
-
-
-# moves a queen at a given index to a spot where it has the fewest conflicts
-def minimizeConflicts(board, conflictIndex, x):
-    # variables that track the best new position for the queen
-    newPosition = []
-    minConflicts = x
-    # a variable to make sure a queen cannot move to its initial position
-    # this stops repeat states where the program can do nothing
-    changeGuarantee = board[conflictIndex]
-
-    # for each potential queen position
-    for i in range(x):
-        # set the board so that the queen is moved to this position
-        board[conflictIndex] = i
-        conflicts = 0
-
-        # check the number of conflicts for the queen if it is in this position
-        for j in range(i, x):
-            conflicts += getConflictCount(board, i, j)
-
-        # if the position is the best position, track the index
-        if conflicts < minConflicts and i is not changeGuarantee:
-            minConflicts = conflicts
-            newPosition = [i]
-        # if the position has the same amount of conflicts as other best cases, track all the indexes
-        elif conflicts == minConflicts and i is not changeGuarantee:
-            newPosition.append(i)
-
-    # put the queen in a random position that has the fewest conflicts and return the board
-    board[conflictIndex] = random.choice(newPosition)
-    return board
-
-
-# checks if there are conflicts between 2 queens
-def getConflictCount(board, i, j):
-    # checks if the queens are in the same row
-    if board[i] == board[j] and i is not j:
-        return 1
-
-    # checks if the queens are in the same diagonal to the left
-    if j < i:
-        diag = abs(j - i)
-        if board[i - diag] == board[i] - diag or board[i - diag] == board[i] + diag:
-            return 1
-
-    # checks if the queens are in the same diagonal to the right
-    if j > i:
-        diag = abs(j - i)
-        if board[i + diag] == board[i] - diag or board[i + diag] == board[i] + diag:
-            return 1
-    # returns 0 if the queens are not in conflict
-    return 0
-
-
-# creates a randomized board with 1 queen in every column
-def createBoard(x):
-    array = [random.randrange(x) for i in range(x)]
-    return array
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
+
+##todo - ds for diags -> data structure which held the
+# array of diagonas - each diagonal was an array and that had a column of every queen on that diagonal
+## add one to all the boards for 1 indexing
+# 30 arrays for 8x8 that are stored in 2 arrays of right and left
+
+#explore having a dictionary where every queen has all rows/columns/diags stored as v
+# and you can just compare vals that way - makes it O(n) instead of O(n^2)
